@@ -1,0 +1,103 @@
+import com.thalmic.myo.*;
+import com.thalmic.myo.enums.*;
+import com.thalmic.myo.example.*;
+import com.thalmic.myo.exception.*;
+
+import java.awt.*;
+import java.awt.event.*;
+
+import javax.swing.*;
+public class myo implements KeyListener
+{
+	static double miny=0.0,minp=1.0,maxp=0.0,maxy=1.0;
+	static DataCollector collector=new DataCollector();
+	public myo()
+	{
+		try {
+			// First, we create a Hub with our application identifier. Be sure not to use the com.example namespace when
+			// publishing your application. The Hub provides access to one or more Myos.
+			Hub hub = new Hub("com.example.test");
+
+			System.out.println("Attempting to find a Myo...");
+
+			// Next, we attempt to find a Myo to use. If a Myo is already paired in Myo Connect, this will return that Myo
+			// immediately.
+			// waitForAnyMyo() takes a timeout value in milliseconds. In this case we will try to find a Myo for 10 seconds, and
+			// if that fails, the function will return a null pointer.
+			Myo myo = hub.waitForMyo(10000);
+
+			// If waitForAnyMyo() returned a null pointer, we failed to find a Myo, so exit with an error message.
+			if (myo==null) {
+				throw new Exception("Unable to find a Myo!");
+			
+
+			// We've found a Myo.
+			System.out.println("Connected to a Myo armband!");
+
+			// Next we construct an instance of our DeviceListener, so that we can register it with the Hub.
+
+			// Hub::addListener() takes the address of any object whose class inherits from DeviceListener, and will cause
+			// Hub::run() to send events to all registered device listeners.
+			hub.addListener(collector);
+			// Finally we enter our main loop.
+			while(true){
+				// In each iteration osf our main loop, we run the Myo event loop for a set number of milliseconds.
+				// In this case, we wish to update our display 20 times a second, so we run for 1000/20 milliseconds.
+				hub.run(1);
+				// After processing events, we call the print() member function we defined above to print out the values we've
+				// obtained from any events that have occurred.
+				//System.out.println(collector);
+				//System.out.println((int)MouseInfo.getPointerInfo().getLocation().getX()+" "+ (int)MouseInfo.getPointerInfo().getLocation().getY());
+				/*double changeX=2.0*(-collector.getYaw()+9.0);
+		        if (Math.abs(changeX)<2)
+		        	changeX=0;
+		        double changeY=2.0*(-collector.getPitch()+9.0);
+		        if (Math.abs(changeY)<2)
+		        	changeY=0;
+		        robot.mouseMove((int)(+changeX), (int)(MouseInfo.getPointerInfo().getLocation().getY()+changeY));
+				 */
+
+				double changeX=(collector.getYaw()-miny)/(maxy-miny);
+				changeX=Math.min(Math.max(0, changeX),1);
+				double changeY=(collector.getPitch()-minp)/(maxp-minp);
+				changeY=Math.min(Math.max(0, 1-changeY),1);
+				Robot robot=new Robot();
+				Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+				System.out.println(collector.getYaw()+" "+collector.getPitch()+" "+changeX+" "+changeY);
+				//System.out.println(changeX+" "+changeY);
+				robot.mouseMove((int)(screenSize.getWidth()*changeX),(int)(screenSize.getHeight()*changeY));
+			}
+			// If a standard exception occurred, we print out its message and exit.
+		} catch (Exception e) {
+			System.err.println("Error: ");
+			e.printStackTrace();
+			System.exit(1);
+		}
+
+	}
+	public static void main(String[]args)
+	{
+		myo test=new myo();
+	}
+	public void keyPressed(KeyEvent e)
+	{
+		int key = e.getKeyCode();
+		if (key == KeyEvent.VK_LEFT) {
+			miny = collector.getYaw();
+			maxp = collector.getPitch();
+		}
+
+		if (key == KeyEvent.VK_RIGHT) {
+			maxy = collector.getYaw();
+			minp = collector.getPitch();
+		}
+		if(key==KeyEvent.VK_Q)
+			System.exit(0);
+	}
+	public void keyReleased(KeyEvent e) {
+
+	}
+	public void keyTyped(KeyEvent e) {
+
+	}
+}
